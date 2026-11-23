@@ -1,5 +1,7 @@
 # Artefatos
 
+> **Vai continuar o trabalho em outra conta ou outra IA?** Comece pela pasta [`handoff/`](handoff/LEIA-ME.md).
+
 Plataforma privada para guardar, rodar e editar os artefatos que você cria no Claude.
 
 - **Importar** HTML de arquivo único ou componentes React (.jsx/.tsx): colando o código ou arrastando arquivos.
