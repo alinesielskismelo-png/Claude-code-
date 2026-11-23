@@ -1,54 +1,27 @@
-"use client";
+import { googleConfigured, passwordConfigured } from "@/lib/auth";
+import LoginForm from "./LoginForm";
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+export const dynamic = "force-dynamic";
 
-function LoginForm() {
-  const params = useSearchParams();
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+const ERROS: Record<string, string> = {
+  "email-nao-autorizado": "Esta conta Google não tem acesso. Entre com o e-mail autorizado.",
+  "google-falhou": "O Google não confirmou o login. Tente de novo.",
+  "sessao-expirada": "O login demorou demais. Tente de novo.",
+  cancelado: "Login cancelado.",
+  "google-desligado": "O login com Google ainda não foi configurado.",
+};
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    const r = await fetch("/api/login", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    setBusy(false);
-    if (r.ok) {
-      const next = params.get("next") || "/";
-      window.location.href = next.startsWith("/") && !next.startsWith("//") ? next : "/";
-    } else {
-      setError((await r.json().catch(() => ({}))).error || "Não foi possível entrar.");
-    }
-  }
-
-  return (
-    <form onSubmit={submit}>
-      <h1 style={{ fontSize: 22 }}>Artefatos</h1>
-      <p className="muted small" style={{ margin: 0 }}>Sua biblioteca privada.</p>
-      <label className="field">
-        <span>Senha</span>
-        <input className="input" type="password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
-      </label>
-      {error && <p className="error small" style={{ margin: 0 }}>{error}</p>}
-      <button className="btn primary" disabled={busy || !password} type="submit">
-        {busy ? "Entrando…" : "Entrar"}
-      </button>
-    </form>
-  );
-}
-
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const sp = await searchParams;
+  const next = sp.next && sp.next.startsWith("/") && !sp.next.startsWith("//") ? sp.next : "/";
   return (
     <main className="login">
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+      <LoginForm
+        google={googleConfigured()}
+        password={passwordConfigured()}
+        next={next}
+        initialError={(sp.erro && ERROS[sp.erro]) || ""}
+      />
     </main>
   );
 }
