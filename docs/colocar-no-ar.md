@@ -1,5 +1,8 @@
 # Como colocar o site no ar (passo a passo, custo zero)
 
+> Guia para **uso pessoal**. Se um dia quiser abrir o site para mais pessoas, veja a cópia reserva
+> [`abrir-para-mais-pessoas.md`](abrir-para-mais-pessoas.md).
+
 Este guia é para quem nunca fez isso. São 4 partes, e cada uma leva de 5 a 15 minutos.
 Você vai criar 3 contas gratuitas. **Nenhuma pede cartão de crédito.** Se alguma tela pedir cartão,
 pare e avise: é sinal de que algo saiu do plano gratuito.
