@@ -4,10 +4,9 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Runner, { type RunnerLog } from "@/components/runner/Runner";
-import AiEditPanel from "@/components/ai/AiEditPanel";
 import type { Artifact, ArtifactKind, Version } from "@/lib/types";
 
-type Tab = "ia" | "historico" | "console" | "detalhes";
+type Tab = "historico" | "console" | "detalhes";
 
 const SOURCE_LABEL: Record<string, string> = { import: "importação", manual: "manual", ai: "IA", restore: "restauração" };
 
@@ -31,7 +30,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   const [saved, setSaved] = useState("");
   const [runCode, setRunCode] = useState("");
   const [runKey, setRunKey] = useState(0);
-  const [tab, setTab] = useState<Tab>("ia");
+  const [tab, setTab] = useState<Tab>("historico");
   const [logs, setLogs] = useState<RunnerLog[]>([]);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -255,7 +254,6 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         <aside className="side">
           <div className="tabs" role="tablist">
             {([
-              ["ia", "IA"],
               ["historico", `Histórico (${versions.length})`],
               ["console", `Console${errors ? ` (${errors})` : ""}`],
               ["detalhes", "Detalhes"],
@@ -266,17 +264,6 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             ))}
           </div>
           <div className="side-body">
-            {tab === "ia" && (
-              <AiEditPanel
-                artifactId={id}
-                code={code}
-                title={artifact.title}
-                onAccept={async (newCode, summary) => {
-                  await saveVersion(newCode, summary || "Edição com IA", "ai");
-                }}
-              />
-            )}
-
             {tab === "historico" &&
               versions.map((v) => (
                 <div key={v.id} className={`version ${v.id === artifact.currentVersionId ? "current" : ""}`}>

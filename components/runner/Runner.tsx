@@ -26,7 +26,7 @@ const SANDBOX = "allow-scripts allow-forms allow-popups allow-popups-to-escape-s
 
 /**
  * Roda um artefato num iframe sandbox (sem allow-same-origin) servido de outra origem.
- * A página pai é a ponte: carrega/salva os dados do artefato e atende window.claude.complete.
+ * A página pai é a ponte: carrega/salva os dados do artefato e responde a window.claude.complete que a IA não está disponível.
  */
 export default function Runner({ artifactId, code, kind, runKey = 0, onLog, className, title }: Props) {
   const frame = useRef<HTMLIFrameElement>(null);
@@ -67,22 +67,11 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
     const answer = (id: number, result?: unknown, error?: { code: string; message: string }) =>
       port?.postMessage({ type: "rpc:result", id, result, error });
 
-    const handleRpc = async (id: number, method: string, args: unknown[]) => {
-      if (method !== "complete") return answer(id, undefined, { code: "unknown_method", message: method });
-      try {
-        const r = await fetch("/api/ai/complete", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ prompt: String(args[0] ?? "") }),
-        });
-        const json = await r.json().catch(() => ({}));
-        if (r.ok) return answer(id, { text: json.text ?? "" });
-        const code = r.status === 429 ? "rate_limited" : r.status === 404 || r.status === 501 ? "not_granted" : "error";
-        answer(id, undefined, { code, message: json.error || `Erro ${r.status}` });
-      } catch {
-        answer(id, undefined, { code: "network", message: "Sem conexão" });
-      }
-    };
+    // Sem IA dentro do site (decisão da Aline): window.claude.complete responde "não disponível".
+    const handleRpc = (id: number, method: string) =>
+      answer(id, undefined, method === "complete"
+        ? { code: "not_granted", message: "A IA não está disponível neste site." }
+        : { code: "unknown_method", message: method });
 
     const onMessage = async (e: MessageEvent) => {
       if (!frame.current || e.source !== frame.current.contentWindow) return;
@@ -103,7 +92,7 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
           pendingKv.set(m.key, m.value ?? null);
           if (!flushTimer) flushTimer = setTimeout(() => flush(), 500);
         } else if (m.type === "rpc") {
-          handleRpc(m.id, m.method, Array.isArray(m.args) ? m.args : []);
+          handleRpc(m.id, String(m.method));
         } else if (m.type === "log") {
           logRef.current?.({ level: m.level === "warn" ? "warn" : "error", message: String(m.message), at: Date.now() });
         }
