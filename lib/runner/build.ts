@@ -1,5 +1,5 @@
 import type { ArtifactKind } from "../types";
-import { SHIM_JS } from "./shim";
+import { SHIM_JS } from "./shim.ts";
 
 /** Versões fixas das bibliotecas usadas para rodar artefatos React. */
 const REACT_CDN = {

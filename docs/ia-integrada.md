@@ -20,7 +20,7 @@ Edição de artefatos por IA e suporte a `window.claude.complete` dentro dos art
 
 Erros sempre vêm como `{ error }`. Sem chave configurada, as duas rotas respondem **501**.
 
-O iframe do artefato não chama `/api/ai/complete` direto: o shim envia `postMessage` para a página pai, e a página pai (mesma origem) chama a rota. Esse lado fica no runner do MVP (`components/runner/Bridge`).
+O iframe do artefato não chama `/api/ai/complete` direto: o shim envia `postMessage` para a página pai, e a página pai (mesma origem) chama a rota. Esse lado fica no runner do MVP (`components/runner/Runner.tsx`).
 
 ## Configuração (variáveis de ambiente, só no servidor)
 
