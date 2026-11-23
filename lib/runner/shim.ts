@@ -77,13 +77,25 @@ window.storage = {
 };
 
 /* ---------- db (documentos no estilo Firestore) ---------- */
-var listeners = Object.create(null);
+var listeners = Object.create(null), colListeners = Object.create(null);
 function snap(path){
   var k = "db:" + path;
   return { id: path.split("/").pop(), ref: docRef(path), exists: k in kv, data: function(){ return clone(kv[k]); },
            metadata: { fromCache: false, hasPendingWrites: false } };
 }
-function emit(path){ (listeners[path] || []).slice().forEach(function(cb){ try { cb(snap(path)); } catch (e) { console.error(e); } }); }
+function parentOf(path){ var i = path.lastIndexOf("/"); return i > 0 ? path.slice(0, i) : ""; }
+function colSnap(path){
+  var pre = "db:" + path + "/";
+  var d = Object.keys(kv).filter(function(k){ return k.indexOf(pre) === 0 && k.slice(pre.length).indexOf("/") < 0; })
+    .map(function(k){ return snap(k.slice(3)); });
+  return { docs: d, size: d.length, empty: d.length === 0, forEach: function(f){ d.forEach(f); },
+           docChanges: function(){ return []; }, metadata: { fromCache: false, hasPendingWrites: false } };
+}
+function emit(path){
+  (listeners[path] || []).slice().forEach(function(cb){ try { cb(snap(path)); } catch (e) { console.error(e); } });
+  var col = parentOf(path);
+  if (col) (colListeners[col] || []).slice().forEach(function(cb){ try { cb(colSnap(col)); } catch (e) { console.error(e); } });
+}
 function docRef(path){
   path = String(path).replace(/^\/+|\/+$/g, "");
   var k = "db:" + path;
@@ -105,16 +117,16 @@ function docRef(path){
 }
 function collectionRef(path){
   path = String(path).replace(/^\/+|\/+$/g, "");
-  function docs(){
-    var pre = "db:" + path + "/";
-    return Object.keys(kv).filter(function(k){ return k.indexOf(pre) === 0 && k.slice(pre.length).indexOf("/") < 0; })
-      .map(function(k){ return snap(k.slice(3)); });
-  }
   return {
     id: path.split("/").pop(), path: path,
     doc: function(id){ return docRef(path + "/" + (id || Math.random().toString(36).slice(2, 12))); },
     add: function(data){ var r = docRef(path + "/" + Math.random().toString(36).slice(2, 12)); return r.set(data).then(function(){ return r; }); },
-    get: function(){ var d = docs(); return Promise.resolve({ docs: d, size: d.length, empty: d.length === 0, forEach: function(f){ d.forEach(f); } }); }
+    get: function(){ return Promise.resolve(colSnap(path)); },
+    onSnapshot: function(cb){
+      (colListeners[path] = colListeners[path] || []).push(cb);
+      setTimeout(function(){ cb(colSnap(path)); }, 0);
+      return function(){ colListeners[path] = (colListeners[path] || []).filter(function(f){ return f !== cb; }); };
+    }
   };
 }
 var dbApi = { doc: docRef, collection: collectionRef };
