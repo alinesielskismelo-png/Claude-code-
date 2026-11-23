@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, authDisabled, authMisconfigured, verifySessionToken } from "@/lib/auth";
+import { SESSION_COOKIE, authDisabled, authProblem, verifySessionToken } from "@/lib/auth";
 import { runnerHost } from "@/lib/origins";
 
-const PUBLIC_PATHS = new Set(["/login", "/api/login"]);
+const PUBLIC_PATHS = new Set(["/login", "/api/login", "/api/auth/google", "/api/auth/google/callback"]);
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -18,8 +18,9 @@ export async function proxy(req: NextRequest) {
 
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
-  if (authMisconfigured()) {
-    return new NextResponse("Defina APP_PASSWORD nas variáveis de ambiente para usar a plataforma.", {
+  const problem = authProblem();
+  if (problem) {
+    return new NextResponse(problem, {
       status: 503,
       headers: { "content-type": "text/plain; charset=utf-8" },
     });

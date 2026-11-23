@@ -14,6 +14,9 @@ export default function TopBar({ children }: { children?: React.ReactNode }) {
       </Link>
       <div className="spacer" />
       {children}
+      <a className="btn sm" href="/api/backup" download title="Baixa uma cópia de todos os artefatos, versões e dados">
+        Baixar backup
+      </a>
       <button className="btn sm" type="button" onClick={logout}>
         Sair
       </button>

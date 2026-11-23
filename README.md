@@ -15,23 +15,30 @@ Precisa do Node.js 20 ou mais novo.
 
 ```bash
 npm install
-cp .env.example .env.local   # defina APP_PASSWORD
+cp .env.example .env.local   # defina APP_PASSWORD (ou o login Google)
 npm run dev
 ```
 
 Abra http://localhost:3000. Sem Supabase configurado, tudo fica em arquivos na pasta `data/` (faça backup dela).
 Sem `APP_PASSWORD`, em desenvolvimento a plataforma abre sem senha; em produção ela se recusa a funcionar.
 
-## Hospedar online (Vercel + Supabase)
+## Hospedar online (Vercel + Supabase, grátis)
 
-1. **Supabase**: crie um projeto, abra o *SQL Editor* e rode `supabase/migrations/0001_init.sql`.
-   Copie a *Project URL* e a *service_role key* (Settings → API).
-2. **Vercel**: importe este repositório e defina as variáveis:
-   `APP_PASSWORD`, `SESSION_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-3. **Dois domínios para o mesmo deploy**: um para a plataforma (ex.: `app.seudominio.com`) e outro só para rodar artefatos
-   (ex.: `run.seudominio.com`). Defina `APP_ORIGIN=https://app.seudominio.com` e
-   `NEXT_PUBLIC_RUNNER_ORIGIN=https://run.seudominio.com` e faça um novo deploy.
-   Sem o segundo domínio funciona também, mas com uma camada de isolamento a menos (veja abaixo).
+Siga o passo a passo em [`docs/colocar-no-ar.md`](docs/colocar-no-ar.md). Em resumo:
+Supabase para os dados, Google Cloud só para o botão "Entrar com Google", e Vercel para o site,
+com um segundo endereço `*-run.vercel.app` só para rodar os artefatos.
+
+## Login
+
+- **Entrar com Google**: só os e-mails em `ALLOWED_EMAILS` entram.
+- **Senha única** (`APP_PASSWORD`): opcional, útil no computador ou como reserva.
+- A sessão vale até a **meia-noite** (fuso `SESSION_TIMEZONE`, padrão `America/Sao_Paulo`). Tirar um e-mail
+  da lista derruba a sessão dele na hora.
+
+## Backup
+
+O botão **Baixar backup** (no topo) baixa um `.json` com todos os artefatos, todas as versões (código)
+e os dados salvos por cada artefato.
 
 ## Segurança da execução
 
@@ -41,7 +48,7 @@ Sem `APP_PASSWORD`, em desenvolvimento a plataforma abre sem senha; em produçã
 | iframe `sandbox` sem `allow-same-origin` | O artefato fica com origem opaca: não lê cookies, storage nem a página pai. |
 | CSP rígida (`/run/shell`) | `connect-src 'none'`: nada de fetch/XHR/WebSocket. Scripts e estilos só de CDNs conhecidas (cdnjs, jsdelivr, unpkg, esm.sh, Tailwind, jQuery) e Google Fonts. |
 | Ponte por `MessagePort` | Só a página da plataforma fala com o servidor. O artefato pede (salvar dado) e a plataforma decide. |
-| Login | Senha única + cookie `httpOnly` assinado; rotas que mudam dados recusam outras origens. |
+| Login | Google (só e-mails autorizados) ou senha; cookie `httpOnly` assinado que vence à meia-noite; rotas que mudam dados recusam outras origens. |
 
 Limitações conhecidas: imagens e mídia podem vir de qualquer `https` (para não quebrar artefatos), então uma URL de imagem
 poderia levar dados do próprio artefato para fora. Links externos abrem em nova aba.
@@ -70,7 +77,8 @@ app/run/shell        página vazia servida na origem dos artefatos, com a CSP
 components/runner    iframe + ponte com o servidor
 lib/store            persistência: arquivos locais ou Supabase (mesma interface)
 lib/runner           shim de window.claude, montagem do documento e CSP
-lib/ai               cliente da API da Claude e edições por procurar/substituir
+lib/auth.ts, lib/google.ts  sessão e login com Google
+docs/                guia para colocar no ar
 supabase/migrations  esquema do banco
 ```
 
