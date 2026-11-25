@@ -8,24 +8,59 @@ import { GwsError, accessToken } from "./account";
 type Args = Record<string, unknown>;
 const MAX_DOWNLOAD = 8 * 1024 * 1024;
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function g(url: string, init: RequestInit = {}): Promise<unknown> {
-  const token = await accessToken();
-  const r = await fetch(url, {
-    ...init,
-    headers: { authorization: `Bearer ${token}`, ...(init.body ? { "content-type": "application/json" } : {}), ...(init.headers || {}) },
-  });
-  if (r.status === 204) return {};
-  if (!r.ok) throw httpError(r.status, await r.text().catch(() => ""));
-  return r.json();
+  for (let attempt = 0; ; attempt++) {
+    const token = await accessToken();
+    const r = await fetch(url, {
+      ...init,
+      headers: { authorization: `Bearer ${token}`, ...(init.body ? { "content-type": "application/json" } : {}), ...(init.headers || {}) },
+    });
+    if (r.status === 204) return {};
+    if (r.ok) return r.json();
+    const body = await r.text().catch(() => "");
+    // Limite de velocidade do Google: espera um pouco e tenta de novo (até 3 vezes).
+    if (isRateLimit(r.status, body) && attempt < 3) {
+      await sleep(400 * 2 ** attempt + Math.random() * 200);
+      continue;
+    }
+    throw httpError(r.status, body);
+  }
+}
+
+function isRateLimit(status: number, body: string) {
+  return status === 429 || (status === 403 && /rate ?limit|quota|userRateLimitExceeded|concurrent/i.test(body));
+}
+
+/** Roda fn em todos os itens, no máximo `limit` ao mesmo tempo (o Gmail não aceita 50 de uma vez). */
+async function pool<T, R>(items: T[], limit: number, fn: (x: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
 }
 
 function httpError(status: number, body: string): GwsError {
   if (status === 401) return new GwsError("needs_reauth", "A conexão com o Google expirou.");
   if (status === 403 && /insufficient|scope/i.test(body)) return new GwsError("not_granted", "Falta permissão do Google para isso.");
-  if (status === 429) return new GwsError("rate_limited", "Muitas chamadas ao Google; tente daqui a pouco.");
+  if (isRateLimit(status, body)) return new GwsError("rate_limited", "Muitas chamadas ao Google; tente daqui a pouco.");
   if (status === 404) return new GwsError("not_found", "Não encontrado no Google.");
   if (status >= 500) return new GwsError("server_unavailable", "O Google não respondeu.");
-  return new GwsError("invalid_request", `Google recusou o pedido (${status}).`);
+  let reason = "";
+  try {
+    const j = JSON.parse(body) as { error?: { errors?: { reason?: string }[]; status?: string } };
+    reason = j.error?.errors?.[0]?.reason || j.error?.status || "";
+  } catch {
+    /* corpo não é JSON */
+  }
+  return new GwsError("invalid_request", `Google recusou o pedido (${status}${reason ? ` ${reason.slice(0, 60)}` : ""}).`);
 }
 
 const s = (v: unknown) => (typeof v === "string" && v ? v : undefined);
@@ -244,13 +279,11 @@ async function searchThreads(a: Args) {
     nextPageToken?: string;
   };
   const meta = "format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Date";
-  const threads = await Promise.all(
-    (list.threads || []).map(async (t) => {
+  const threads = await pool(list.threads || [], 8, async (t) => {
       const th = (await g(`${GMAIL}/threads/${enc(t.id)}?${meta}`)) as { id: string; messages?: GMsg[] };
       const msgs = th.messages || [];
       return { id: th.id, messageCount: msgs.length, viewUrl: viewUrl(th.id), messages: msgs.map((m) => msgOut(m, false)) };
-    }),
-  );
+  });
   return { threads, nextPageToken: list.nextPageToken };
 }
 
@@ -268,12 +301,10 @@ async function listDrafts(a: Args) {
     nextPageToken?: string;
   };
   const full = s(a.view) === "DRAFT_VIEW_FULL";
-  const drafts = await Promise.all(
-    (list.drafts || []).map(async (d) => {
+  const drafts = await pool(list.drafts || [], 8, async (d) => {
       const dr = (await g(`${GMAIL}/drafts/${enc(d.id)}?format=${full ? "full" : "metadata"}`)) as { id: string; message: GMsg };
       return { ...msgOut(dr.message, full), id: dr.id, messageId: dr.message.id, viewUrl: viewUrl(dr.message.threadId) };
-    }),
-  );
+  });
   return { drafts, nextPageToken: list.nextPageToken };
 }
 
