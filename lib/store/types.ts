@@ -32,4 +32,7 @@ export interface Store {
   /** Configurações do site (ex.: conexão com o Google). value === null apaga. */
   getSetting(key: string): Promise<string | null>;
   setSetting(key: string, value: string | null): Promise<void>;
+  /** Arquivos enviados pelos artefatos (fotos, PDFs). id é aleatório e longo. */
+  putAsset(id: string, data: Uint8Array, contentType: string): Promise<void>;
+  getAsset(id: string): Promise<{ data: Uint8Array; contentType: string } | null>;
 }

@@ -185,12 +185,25 @@ var mcpApi = {
   }
 };
 
+/* ---------- assets: fotos e arquivos guardados no site ("/_blob/<id>") ---------- */
+var assetsApi = {
+  upload: function(blob){
+    if (!blob || typeof blob.size !== "number") return Promise.reject(err("invalid_argument", "Envie um arquivo"));
+    if (blob.size > 4 * 1024 * 1024) return Promise.reject(err("too_large", "Arquivo grande demais (máx. 4 MB)"));
+    return rpc("asset:upload", [blob]).then(function(r){
+      return { id: r.id, url: r.url, size: r.size, contentType: r.contentType };
+    });
+  },
+  url: function(id){ return "/_blob/" + id; }
+};
+
 window.claude = {
   complete: complete,
   use: function(name){
     if (name === "db") return Promise.resolve(dbApi);
     if (name === "sample") return Promise.resolve(sample);
     if (name === "mcp") return Promise.resolve(mcpApi);
+    if (name === "assets") return Promise.resolve(assetsApi);
     return Promise.reject(err("not_granted", "Recurso \"" + name + "\" ainda não existe nesta plataforma"));
   }
 };

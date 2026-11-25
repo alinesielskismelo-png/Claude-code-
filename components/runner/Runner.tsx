@@ -89,6 +89,22 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
           return answer(id, undefined, { code: "server_unavailable", message: "Sem conexão com o site." });
         }
       }
+      if (method === "asset:upload" && Array.isArray(args) && args[0] instanceof Blob) {
+        const blob = args[0] as Blob;
+        try {
+          const r = await fetch("/api/assets", {
+            method: "POST",
+            headers: { "content-type": blob.type || "application/octet-stream" },
+            body: blob,
+          });
+          const j = await r.json().catch(() => ({}));
+          if (r.status === 413) return answer(id, undefined, { code: "too_large", message: String(j?.error || "Arquivo grande demais.") });
+          if (!r.ok) return answer(id, undefined, { code: "upload_failed", message: String(j?.error || r.status) });
+          return answer(id, j);
+        } catch {
+          return answer(id, undefined, { code: "upload_failed", message: "Sem conexão com o site." });
+        }
+      }
       answer(id, undefined, method === "complete"
         ? { code: "not_granted", message: "A IA não está disponível neste site." }
         : { code: "unknown_method", message: method });

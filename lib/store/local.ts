@@ -226,4 +226,25 @@ export class LocalStore implements Store {
       await this.writeAtomic(this.settingsFile(), JSON.stringify(all));
     });
   }
+
+  private assetPath(id: string) {
+    return path.join(this.dir, "assets", id);
+  }
+
+  async putAsset(id: string, data: Uint8Array, contentType: string) {
+    await fs.mkdir(path.join(this.dir, "assets"), { recursive: true });
+    await fs.writeFile(this.assetPath(id), data);
+    await fs.writeFile(this.assetPath(id) + ".type", contentType);
+  }
+
+  async getAsset(id: string) {
+    try {
+      const data = new Uint8Array(await fs.readFile(this.assetPath(id)));
+      const contentType = await fs.readFile(this.assetPath(id) + ".type", "utf8").catch(() => "application/octet-stream");
+      return { data, contentType };
+    } catch (e: unknown) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw e;
+    }
+  }
 }
