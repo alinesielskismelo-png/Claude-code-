@@ -34,7 +34,7 @@ export function GET() {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "content-security-policy": runnerCsp(ancestors),
-      "cache-control": "public, max-age=300",
+      "cache-control": "no-cache",
       "x-content-type-options": "nosniff",
       "referrer-policy": "no-referrer",
     },
