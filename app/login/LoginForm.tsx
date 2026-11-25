@@ -33,7 +33,7 @@ export default function LoginForm({
 
   return (
     <div className="login-box">
-      <h1 style={{ fontSize: 22 }}>Artefatos</h1>
+      <h1 style={{ fontSize: 22 }}>Sielskis Workspace</h1>
       <p className="muted small" style={{ margin: 0 }}>
         Sua biblioteca privada. O acesso vale até a meia-noite.
       </p>
