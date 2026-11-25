@@ -69,7 +69,7 @@ export default function ImportPage() {
         if (!r.ok) throw new Error(`${f.name || "Código"}: ${j.error || r.status}`);
         lastId = j.artifact.id;
       }
-      router.push(multi ? "/" : `/artifacts/${lastId}`);
+      router.push(multi ? "/biblioteca" : `/artifacts/${lastId}`);
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);

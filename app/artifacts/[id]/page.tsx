@@ -153,7 +153,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   async function remove() {
     if (!artifact || !confirm(`Excluir "${artifact.title}" e todas as versões? Não dá para desfazer.`)) return;
     await api(`/api/artifacts/${id}`, { method: "DELETE" });
-    router.push("/");
+    router.push("/biblioteca");
   }
 
   async function clearData() {
@@ -177,7 +177,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
     return (
       <main className="page">
         <p className="error">{error}</p>
-        <Link href="/">Voltar à biblioteca</Link>
+        <Link href="/biblioteca">Voltar à biblioteca</Link>
       </main>
     );
   }
@@ -189,7 +189,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="editor">
       <div className="editor-head">
-        <Link className="btn sm" href="/">← Biblioteca</Link>
+        <Link className="btn sm" href="/biblioteca">← Biblioteca</Link>
         <input
           className="title-input"
           defaultValue={artifact.title}

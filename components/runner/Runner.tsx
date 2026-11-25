@@ -20,6 +20,8 @@ interface Props {
   onLog?: (log: RunnerLog) => void;
   className?: string;
   title?: string;
+  /** O artefato pediu para abrir outro artefato do claude.ai (id do endereço). */
+  onOpenArtifact?: (ref: string) => void;
 }
 
 const SANDBOX = "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads";
@@ -28,12 +30,14 @@ const SANDBOX = "allow-scripts allow-forms allow-popups allow-popups-to-escape-s
  * Roda um artefato num iframe sandbox (sem allow-same-origin) servido de outra origem.
  * A página pai é a ponte: carrega/salva os dados do artefato e responde a window.claude.complete que a IA não está disponível.
  */
-export default function Runner({ artifactId, code, kind, runKey = 0, onLog, className, title }: Props) {
+export default function Runner({ artifactId, code, kind, runKey = 0, onLog, className, title, onOpenArtifact }: Props) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [origin, setOrigin] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "running" | "error">("loading");
   const logRef = useRef(onLog);
   logRef.current = onLog;
+  const openRef = useRef(onOpenArtifact);
+  openRef.current = onOpenArtifact;
   const doc = useMemo(() => buildDocument(code, kind), [code, kind]);
   const docHash = useMemo(() => hash(doc), [doc]);
 
@@ -93,6 +97,8 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
           if (!flushTimer) flushTimer = setTimeout(() => flush(), 500);
         } else if (m.type === "rpc") {
           handleRpc(m.id, String(m.method));
+        } else if (m.type === "open" && typeof m.ref === "string" && /^[A-Za-z0-9-]{1,64}$/.test(m.ref)) {
+          openRef.current?.(m.ref);
         } else if (m.type === "log") {
           logRef.current?.({ level: m.level === "warn" ? "warn" : "error", message: String(m.message), at: Date.now() });
         }

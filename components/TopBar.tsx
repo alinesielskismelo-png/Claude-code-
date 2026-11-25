@@ -9,7 +9,7 @@ export default function TopBar({ children }: { children?: React.ReactNode }) {
   }
   return (
     <header className="topbar">
-      <Link href="/" className="brand">
+      <Link href="/biblioteca" className="brand">
         <i aria-hidden /> Sielskis Workspace
       </Link>
       <div className="spacer" />
