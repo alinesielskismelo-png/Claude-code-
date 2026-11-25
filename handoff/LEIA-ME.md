@@ -4,7 +4,7 @@
 > Ele existe para que qualquer conta do Claude (ou outra IA) continue o trabalho da Aline
 > do ponto onde a conta anterior parou, sem que ela precise explicar tudo de novo.
 >
-> **Última atualização:** 23/11/2026, 18h (horário de Brasília) — Claude (conta principal)
+> **Última atualização:** 25/11/2026 (horário de Brasília) — Claude (conta principal)
 
 ---
 
@@ -65,10 +65,13 @@ site (pelo repositório ou importando o código). Não reative a IA integrada.
 - **Guia para colocar no ar:** [docs/colocar-no-ar.md](../docs/colocar-no-ar.md).
 - **Supabase (banco de dados):** ✅ criado. Projeto `sielskis-workspace`, banco com as 3 tabelas da
   migração `supabase/migrations/0001_init.sql`.
-- **Vercel (hospedagem):** 🔄 em configuração. Projeto `sielskis-workspace` já importado do GitHub e com
-  as variáveis preenchidas; faltava a Aline colar a chave secreta do Supabase e criar a senha do site
-  (`APP_PASSWORD`). Depois: publicar e criar o segundo endereço `sielskis-workspace-run.vercel.app`
-  (onde os artefatos rodam isolados).
+- **Vercel (hospedagem):** ✅ **no ar desde 24/11.** Projeto `sielskis-workspace` (conta `alinesielskisicloud`).
+  - Site: https://sielskis-workspace.vercel.app (entra com a senha `APP_PASSWORD`, que só a Aline sabe).
+  - Endereço onde os artefatos rodam isolados: https://sielskis-workspace-run.vercel.app
+  - Variáveis preenchidas: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_PASSWORD`, `NEXT_PUBLIC_RUNNER_ORIGIN`.
+  - Toda vez que algo entra na branch `main`, a Vercel publica sozinha a versão nova.
+  - Se a Vercel disser "Para vincular um repositório do GitHub...", vá em Vercel > Account Settings >
+    Authentication > GitHub > "..." > **Reautenticar**. Isso resolveu em 24/11.
 - **Login com Google:** ⏳ depois que o site estiver no ar.
 - **Contas do GitHub:** a Aline tem duas. `alinesielskismelo-png` é dona deste repositório;
   `alinesielskisicloud` está ligada à Vercel e ao Supabase. Se a Vercel não listar o repositório,
@@ -125,10 +128,9 @@ site (pelo repositório ou importando o código). Não reative a IA integrada.
 
 ## 6. Próximos passos (em ordem)
 
-1. **Vercel:** a Aline cola a chave `service_role` do Supabase e cria a `APP_PASSWORD`; publicar;
-   adicionar o domínio `sielskis-workspace-run.vercel.app`; conferir `NEXT_PUBLIC_RUNNER_ORIGIN`.
-2. **Testar o site no ar:** entrar com a senha, importar um artefato (ex.: o Hub da Aline), salvar uma
-   versão, baixar o backup.
+1. ~~Vercel~~ ✅ feito em 24/11.
+2. **Testar o site no ar:** a Aline entra com a senha, importa um artefato (ex.: o Hub da Aline), salva
+   uma versão e baixa o backup.
 3. **Importar os artefatos** (Hub, Painel, Dashboard de Cursos) para o site.
 4. **Login com Google** (Google Cloud + `ALLOWED_EMAILS`), seguindo `docs/colocar-no-ar.md`.
 5. **Painel:** descobrir com a Aline o horário de cada matéria; seguir refinando a aba Cursos

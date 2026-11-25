@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Artefatos",
+  title: "Sielskis Workspace",
   description: "Biblioteca privada de artefatos com IA",
   robots: { index: false, follow: false },
 };

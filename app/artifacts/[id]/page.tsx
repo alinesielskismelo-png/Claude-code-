@@ -58,7 +58,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         setCode(j.code);
         setSaved(j.code);
         setRunCode(j.code);
-        document.title = `${j.artifact.title} · Artefatos`;
+        document.title = `${j.artifact.title} · Sielskis Workspace`;
       })
       .catch((e) => setError(e.message));
     loadVersions().catch(() => {});
