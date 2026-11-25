@@ -72,10 +72,27 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
       port?.postMessage({ type: "rpc:result", id, result, error });
 
     // Sem IA dentro do site (decisão da Aline): window.claude.complete responde "não disponível".
-    const handleRpc = (id: number, method: string) =>
+    const handleRpc = async (id: number, method: string, args: unknown) => {
+      if (method === "mcp" && Array.isArray(args)) {
+        const [server, tool, toolArgs] = args;
+        try {
+          const r = await fetch("/api/mcp", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ server, tool, args: toolArgs || {} }),
+          });
+          const j = await r.json().catch(() => ({}));
+          if (j && j.error && typeof j.error === "object") return answer(id, undefined, j.error);
+          if (!r.ok) return answer(id, undefined, { code: "server_unavailable", message: String(j?.error || r.status) });
+          return answer(id, j);
+        } catch {
+          return answer(id, undefined, { code: "server_unavailable", message: "Sem conexão com o site." });
+        }
+      }
       answer(id, undefined, method === "complete"
         ? { code: "not_granted", message: "A IA não está disponível neste site." }
         : { code: "unknown_method", message: method });
+    };
 
     const onMessage = async (e: MessageEvent) => {
       if (!frame.current || e.source !== frame.current.contentWindow) return;
@@ -96,7 +113,7 @@ export default function Runner({ artifactId, code, kind, runKey = 0, onLog, clas
           pendingKv.set(m.key, m.value ?? null);
           if (!flushTimer) flushTimer = setTimeout(() => flush(), 500);
         } else if (m.type === "rpc") {
-          handleRpc(m.id, String(m.method));
+          handleRpc(m.id, String(m.method), m.args);
         } else if (m.type === "open" && typeof m.ref === "string" && /^[A-Za-z0-9-]{1,64}$/.test(m.ref)) {
           openRef.current?.(m.ref);
         } else if (m.type === "log") {

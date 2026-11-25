@@ -29,4 +29,7 @@ export interface Store {
   getKv(artifactId: string): Promise<KvMap>;
   /** value === null apaga a chave. */
   setKv(artifactId: string, key: string, value: unknown): Promise<void>;
+  /** Configurações do site (ex.: conexão com o Google). value === null apaga. */
+  getSetting(key: string): Promise<string | null>;
+  setSetting(key: string, value: string | null): Promise<void>;
 }
