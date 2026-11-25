@@ -3,6 +3,8 @@ import { assertSameOrigin, fail, readJson, str } from "@/lib/api";
 import { GwsError } from "@/lib/gws/account";
 import { callTool } from "@/lib/gws/tools";
 
+export const maxDuration = 30;
+
 /** Os artefatos chamam os conectores do Google por aqui: {server, tool, args} → {payload}. */
 export async function POST(req: Request) {
   try {
