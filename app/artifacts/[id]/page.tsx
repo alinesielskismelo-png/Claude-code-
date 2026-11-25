@@ -4,9 +4,10 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Runner, { type RunnerLog } from "@/components/runner/Runner";
+import AiBridge from "@/components/AiBridge";
 import type { Artifact, ArtifactKind, Version } from "@/lib/types";
 
-type Tab = "historico" | "console" | "detalhes";
+type Tab = "historico" | "console" | "ia" | "detalhes";
 
 const SOURCE_LABEL: Record<string, string> = { import: "importação", manual: "manual", ai: "IA", restore: "restauração" };
 
@@ -256,6 +257,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             {([
               ["historico", `Histórico (${versions.length})`],
               ["console", `Console${errors ? ` (${errors})` : ""}`],
+              ["ia", "Com IA"],
               ["detalhes", "Detalhes"],
             ] as [Tab, string][]).map(([k, label]) => (
               <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
@@ -291,6 +293,30 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
                   <div key={i} className={`log ${l.level}`}>{l.message}</div>
                 ))}
               </>
+            )}
+
+            {tab === "ia" && (
+              <AiBridge
+                artifactId={id}
+                title={artifact.title}
+                kind={artifact.kind}
+                code={code}
+                onPreview={(c) => {
+                  setLogs([]);
+                  setRunCode(c ?? code);
+                  setRunKey((k) => k + 1);
+                }}
+                onSave={async (c, msg) => {
+                  await saveVersion(c, msg, "ai");
+                  flash("Versão da IA salva");
+                }}
+                onUseInEditor={(c) => {
+                  setCode(c);
+                  setRunCode(c);
+                  setRunKey((k) => k + 1);
+                  flash("Código da IA no editor (ainda não salvo)");
+                }}
+              />
             )}
 
             {tab === "detalhes" && (

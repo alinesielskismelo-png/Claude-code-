@@ -10,6 +10,9 @@ Plataforma privada para guardar, rodar e editar os artefatos que você cria no C
 - **Salvar alterações** com histórico de versões: abrir, restaurar ou baixar qualquer versão.
 - **Dados do artefato** (localStorage, `window.storage`, `window.claude.use("db")`) ficam guardados na plataforma e voltam quando você abre de novo.
 - **Sem IA dentro do site**: as mudanças são feitas nas conversas com as IAs (Claude, ChatGPT, Gemini) e entram aqui como versão nova.
+- **Aba "Com IA" no editor** (ponte com as IAs, sem chave nem custo): você escreve o que quer mudar e copia o pedido já com o
+  código; cola no chat da IA; cola a resposta de volta. O site tira o código da resposta, mostra o que mudou linha a linha,
+  avisa se a IA cortou partes ("// ... resto igual") e salva como versão nova marcada "IA".
 
 ## Rodar no seu computador
 
@@ -66,7 +69,8 @@ O shim (`lib/runner/shim.ts`) recria fora do claude.ai:
 | `window.claude.complete(prompt)` | ❌ sem IA no site: o artefato recebe "não disponível" |
 | `window.claude.use("db")` (`doc().set/get/update/onSnapshot`) | ✅ persiste na plataforma |
 | `window.claude.use("sample")` | ❌ sem IA no site: recebe "não disponível" |
-| `window.claude.use("mcp")`, `use("assets")` | ❌ ainda não: o artefato recebe "não disponível" e entra no modo dele sem conector |
+| `window.claude.use("mcp")` | ✅ para Google Agenda, Drive, Planilhas e Gmail, depois de ligar o Google no topo da Biblioteca; outros conectores recebem "não disponível" |
+| `window.claude.use("assets")` | ✅ fotos e arquivos ficam guardados no site (`/_blob/<id>`) |
 
 Testado com *Hub da Aline* (funciona, inclusive salvando os perfis) e *Dashboard de Cursos / sala5* (abre em modo leitura,
 porque depende do conector do Google Sheets).
@@ -79,6 +83,8 @@ app/run/shell        página vazia servida na origem dos artefatos, com a CSP
 components/runner    iframe + ponte com o servidor
 lib/store            persistência: arquivos locais ou Supabase (mesma interface)
 lib/runner           shim de window.claude, montagem do documento e CSP
+lib/aiBridge.ts      pedido para a IA e leitura da resposta (aba "Com IA")
+lib/diff.ts          comparação linha a linha entre versões
 lib/auth.ts, lib/google.ts  sessão e login com Google
 docs/                guia para colocar no ar
 supabase/migrations  esquema do banco

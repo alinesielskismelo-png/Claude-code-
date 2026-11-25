@@ -4,7 +4,7 @@
 > Ele existe para que qualquer conta do Claude (ou outra IA) continue o trabalho da Aline
 > do ponto onde a conta anterior parou, sem que ela precise explicar tudo de novo.
 >
-> **Última atualização:** 25/11/2026 (horário de Brasília) — Claude (conta principal)
+> **Última atualização:** 25/11/2026 (horário de Brasília) — Claude (outra conta, pelo Claude Duet)
 
 ---
 
@@ -76,8 +76,13 @@ site (pelo repositório ou importando o código). Não reative a IA integrada.
 - **Contas do GitHub:** a Aline tem duas. `alinesielskismelo-png` é dona deste repositório;
   `alinesielskisicloud` está ligada à Vercel e ao Supabase. Se a Vercel não listar o repositório,
   importe pela URL: `vercel.com/new/import?s=https://github.com/alinesielskismelo-png/Claude-code-`.
-- **Ainda não funciona na plataforma:** conectores (`mcp`) e imagens por upload (`assets`) dentro dos
-  artefatos.
+- **Feito em 25/11 (PRs #6 a #13, já na `main`):** Hub como página inicial, ligação com o Google para os
+  artefatos (Agenda, Drive, Planilhas e Gmail pelo `window.claude.use("mcp")`), fotos e arquivos
+  (`use("assets")`) e ajustes de cota do Gmail e de fuso da Agenda.
+- **Em revisão (branch `claude/ponte-com-ias`):** aba **"Com IA"** no editor. Sem IA dentro do site: ela monta
+  o pedido com o código para colar no chat da IA e lê a resposta colada de volta, mostra o que mudou,
+  avisa se a IA cortou partes e salva como versão "IA". Só entra no ar quando a Aline aprovar o merge.
+- **Ainda não funciona na plataforma:** conectores que não sejam do Google.
 
 ### 4.2 Painel da Aline e Dashboard de Cursos (artefatos no Claude)
 - **Painel da Aline:** abas Faculdade (PUC Goiás, Direito 2026.2, notas N1/N2) e Cursos
@@ -129,13 +134,15 @@ site (pelo repositório ou importando o código). Não reative a IA integrada.
 ## 6. Próximos passos (em ordem)
 
 1. ~~Vercel~~ ✅ feito em 24/11.
-2. **Testar o site no ar:** a Aline entra com a senha, importa um artefato (ex.: o Hub da Aline), salva
+2. **Revisar e aprovar a aba "Com IA"** (pull request da branch `claude/ponte-com-ias`). Ao aprovar o merge,
+   a Vercel publica sozinha.
+3. **Testar o site no ar:** a Aline entra com a senha, importa um artefato (ex.: o Hub da Aline), salva
    uma versão e baixa o backup.
-3. **Importar os artefatos** (Hub, Painel, Dashboard de Cursos) para o site.
-4. **Login com Google** (Google Cloud + `ALLOWED_EMAILS`), seguindo `docs/colocar-no-ar.md`.
-5. **Painel:** descobrir com a Aline o horário de cada matéria; seguir refinando a aba Cursos
+4. **Importar os artefatos** (Hub, Painel, Dashboard de Cursos) para o site.
+5. **Login com Google** (Google Cloud + `ALLOWED_EMAILS`), seguindo `docs/colocar-no-ar.md`.
+6. **Painel:** descobrir com a Aline o horário de cada matéria; seguir refinando a aba Cursos
    "só informativo".
-6. **Depois:** testes no iPad; conectores (`mcp`) e imagens (`assets`) na plataforma.
+7. **Depois:** testes no iPad.
 
 ---
 
