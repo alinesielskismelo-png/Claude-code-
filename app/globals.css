@@ -150,3 +150,16 @@ label.field > span { font-weight: 600; }
   .page { padding: 16px; }
   .topbar { padding: 10px 16px; }
 }
+
+/* Ponte com as IAs (aba "Com IA" do editor) */
+.bridge { display: grid; gap: 14px; }
+.bridge-step { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.bridge-step h4 { margin: 0; font-size: 14px; }
+.ok-text { color: var(--ok); margin: 0; }
+.notice.warn { border-left: 3px solid var(--danger); }
+.diff { max-height: 340px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); font: 12px/1.5 var(--mono); }
+.diff-line { white-space: pre; padding: 0 8px; min-width: max-content; }
+.diff-line.add { background: var(--accent-soft); }
+.diff-line.del { color: var(--muted); text-decoration: line-through; }
+.diff-mark { display: inline-block; width: 14px; color: var(--muted); user-select: none; }
+.diff-skip { padding: 2px 8px; color: var(--muted); font-family: inherit; border-block: 1px dashed var(--border); }
