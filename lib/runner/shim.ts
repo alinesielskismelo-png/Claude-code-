@@ -153,8 +153,25 @@ function sample(prompt, opts){
 
 /* ---------- mcp: conectores do Google pelo servidor do site ---------- */
 var watchers = [];
+/* Datas sem fuso ("2026-11-25T08:00:00") ganham o fuso do aparelho, como no claude.ai. */
+var NAIVE_DT = /^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d(\.\d+)?)?$/;
+function withOffset(v){
+  if (typeof v !== "string" || !NAIVE_DT.test(v)) return v;
+  var d = new Date(v); if (isNaN(d)) return v;
+  var m = -d.getTimezoneOffset(), sign = m >= 0 ? "+" : "-"; m = Math.abs(m);
+  var hh = String(Math.floor(m / 60)).padStart(2, "0"), mm = String(m % 60).padStart(2, "0");
+  return (v.length === 16 ? v + ":00" : v) + sign + hh + ":" + mm;
+}
+function fixArgs(server, args){
+  args = args && typeof args === "object" ? clone(args) : {};
+  if (/calendar|agenda/i.test(String(server))) {
+    ["startTime", "endTime", "timeMin", "timeMax", "start", "end"].forEach(function(k){ if (k in args) args[k] = withOffset(args[k]); });
+    if (!args.timeZone) { try { args.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {} }
+  }
+  return args;
+}
 function callTool(server, tool, args){
-  return rpc("mcp", [String(server), String(tool), args || {}]);
+  return rpc("mcp", [String(server), String(tool), fixArgs(server, args)]);
 }
 function runWatcher(w){
   callTool(w.server, w.tool, w.args).then(function(r){

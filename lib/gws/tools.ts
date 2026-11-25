@@ -58,6 +58,7 @@ async function listEvents(a: Args) {
         orderBy,
         pageToken: s(a.pageToken),
         q: s(a.query) || s(a.q),
+        timeZone: s(a.timeZone),
       }),
   )) as { items?: unknown[]; nextPageToken?: string };
   return { events: r.items || [], nextPageToken: r.nextPageToken };
