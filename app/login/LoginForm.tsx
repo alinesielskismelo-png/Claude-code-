@@ -35,7 +35,7 @@ export default function LoginForm({
     <div className="login-box">
       <h1 style={{ fontSize: 22 }}>Sielskis Workspace</h1>
       <p className="muted small" style={{ margin: 0 }}>
-        Sua biblioteca privada. O acesso vale até a meia-noite.
+        Workspace Privado
       </p>
       {google && (
         <a className="btn primary" href={`/api/auth/google?next=${encodeURIComponent(next)}`}>
