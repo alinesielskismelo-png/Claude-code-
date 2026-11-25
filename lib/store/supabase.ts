@@ -44,6 +44,7 @@ function toVersion(r: Row): Version {
   };
 }
 
+const ASSET_BUCKET = "assets";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function check<T>(res: { data: T; error: { message: string } | null }): T {
@@ -177,5 +178,35 @@ export class SupabaseStore implements Store {
       return;
     }
     check(await this.db.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() }));
+  }
+
+  private bucketReady: Promise<void> | null = null;
+
+  /** Bucket privado "assets" no Supabase Storage; criado na primeira vez. */
+  private ensureBucket() {
+    if (!this.bucketReady) {
+      this.bucketReady = (async () => {
+        const { data } = await this.db.storage.getBucket(ASSET_BUCKET);
+        if (data) return;
+        const r = await this.db.storage.createBucket(ASSET_BUCKET, { public: false });
+        if (r.error && !/already exists/i.test(r.error.message)) throw new Error(`Supabase: ${r.error.message}`);
+      })().catch((e) => {
+        this.bucketReady = null;
+        throw e;
+      });
+    }
+    return this.bucketReady;
+  }
+
+  async putAsset(id: string, data: Uint8Array, contentType: string) {
+    await this.ensureBucket();
+    const r = await this.db.storage.from(ASSET_BUCKET).upload(id, data, { contentType, upsert: false });
+    if (r.error) throw new Error(`Supabase: ${r.error.message}`);
+  }
+
+  async getAsset(id: string) {
+    const r = await this.db.storage.from(ASSET_BUCKET).download(id);
+    if (r.error || !r.data) return null;
+    return { data: new Uint8Array(await r.data.arrayBuffer()), contentType: r.data.type || "application/octet-stream" };
   }
 }

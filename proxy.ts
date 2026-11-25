@@ -11,10 +11,10 @@ export async function proxy(req: NextRequest) {
 
   // A origem dos artefatos só serve o runner; a origem da plataforma não serve o runner.
   if (rHost && host === rHost) {
-    if (pathname === "/run/shell") return NextResponse.next();
+    if (pathname === "/run/shell" || pathname.startsWith("/_blob/")) return NextResponse.next();
     return new NextResponse("Not found", { status: 404 });
   }
-  if (pathname === "/run/shell") return NextResponse.next();
+  if (pathname === "/run/shell" || pathname.startsWith("/_blob/")) return NextResponse.next();
 
   if (PUBLIC_PATHS.has(pathname)) return NextResponse.next();
 
