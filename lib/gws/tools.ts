@@ -48,19 +48,20 @@ async function pool<T, R>(items: T[], limit: number, fn: (x: T) => Promise<R>): 
 }
 
 function httpError(status: number, body: string): GwsError {
-  if (status === 401) return new GwsError("needs_reauth", "A conexão com o Google expirou.");
-  if (status === 403 && /insufficient|scope/i.test(body)) return new GwsError("not_granted", "Falta permissão do Google para isso.");
-  if (isRateLimit(status, body)) return new GwsError("rate_limited", "Muitas chamadas ao Google; tente daqui a pouco.");
-  if (status === 404) return new GwsError("not_found", "Não encontrado no Google.");
-  if (status >= 500) return new GwsError("server_unavailable", "O Google não respondeu.");
   let reason = "";
   try {
     const j = JSON.parse(body) as { error?: { errors?: { reason?: string }[]; status?: string } };
-    reason = j.error?.errors?.[0]?.reason || j.error?.status || "";
+    reason = (j.error?.errors?.[0]?.reason || j.error?.status || "").slice(0, 60);
   } catch {
     /* corpo não é JSON */
   }
-  return new GwsError("invalid_request", `Google recusou o pedido (${status}${reason ? ` ${reason.slice(0, 60)}` : ""}).`);
+  const why = reason ? ` (${reason})` : "";
+  if (status === 401) return new GwsError("needs_reauth", "A conexão com o Google expirou.");
+  if (status === 403 && /insufficient|scope/i.test(body)) return new GwsError("not_granted", "Falta permissão do Google para isso.");
+  if (isRateLimit(status, body)) return new GwsError("rate_limited", `Muitas chamadas ao Google; tente daqui a pouco${why}.`);
+  if (status === 404) return new GwsError("not_found", "Não encontrado no Google.");
+  if (status >= 500) return new GwsError("server_unavailable", "O Google não respondeu.");
+  return new GwsError("invalid_request", `Google recusou o pedido (${status}${reason ? ` ${reason}` : ""}).`);
 }
 
 const s = (v: unknown) => (typeof v === "string" && v ? v : undefined);
@@ -273,16 +274,31 @@ function msgOut(m: GMsg, full: boolean) {
   };
 }
 
+const threadCache = new Map<string, unknown>();
+
 async function searchThreads(a: Args) {
   const list = (await g(`${GMAIL}/threads?` + qs({ q: s(a.query), maxResults: n(a.pageSize, 20, 50), pageToken: s(a.pageToken) }))) as {
-    threads?: { id: string }[];
+    threads?: { id: string; historyId?: string }[];
     nextPageToken?: string;
   };
   const meta = "format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Cc&metadataHeaders=Date";
-  const threads = await pool(list.threads || [], 8, async (t) => {
-      const th = (await g(`${GMAIL}/threads/${enc(t.id)}?${meta}`)) as { id: string; messages?: GMsg[] };
-      const msgs = th.messages || [];
-      return { id: th.id, messageCount: msgs.length, viewUrl: viewUrl(th.id), messages: msgs.map((m) => msgOut(m, false)) };
+  // Cada conversa custa 10 "unidades" e o Gmail aceita ~250 por segundo: poucas por vez, com pausa,
+  // e cache por historyId (a conversa só é buscada de novo quando muda).
+  const threads = await pool(list.threads || [], 3, async (t) => {
+    const key = `${t.id}:${t.historyId || ""}`;
+    const hit = threadCache.get(key);
+    if (hit) return hit;
+    const started = Date.now();
+    const th = (await g(`${GMAIL}/threads/${enc(t.id)}?${meta}`)) as { id: string; messages?: GMsg[] };
+    const msgs = th.messages || [];
+    const out = { id: th.id, messageCount: msgs.length, viewUrl: viewUrl(th.id), messages: msgs.map((m) => msgOut(m, false)) };
+    if (t.historyId) {
+      if (threadCache.size > 3000) threadCache.clear();
+      threadCache.set(key, out);
+    }
+    const wait = 150 - (Date.now() - started);
+    if (wait > 0) await sleep(wait);
+    return out;
   });
   return { threads, nextPageToken: list.nextPageToken };
 }
@@ -301,7 +317,7 @@ async function listDrafts(a: Args) {
     nextPageToken?: string;
   };
   const full = s(a.view) === "DRAFT_VIEW_FULL";
-  const drafts = await pool(list.drafts || [], 8, async (d) => {
+  const drafts = await pool(list.drafts || [], 3, async (d) => {
       const dr = (await g(`${GMAIL}/drafts/${enc(d.id)}?format=${full ? "full" : "metadata"}`)) as { id: string; message: GMsg };
       return { ...msgOut(dr.message, full), id: dr.id, messageId: dr.message.id, viewUrl: viewUrl(dr.message.threadId) };
   });
