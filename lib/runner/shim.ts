@@ -160,11 +160,23 @@ window.claude = {
   }
 };
 
+/* ---------- links para outros artefatos do claude.ai abrem a cópia do site ---------- */
+var ART_RE = /^https?:\/\/claude\.ai\/(?:code\/)?artifact\/([A-Za-z0-9-]{1,64})/i;
+function artRef(u){ var m = String(u || "").match(ART_RE); return m ? m[1] : null; }
+var nativeOpen = window.open;
+window.open = function(u){
+  var ref = artRef(u);
+  if (ref) { send({ type: "open", ref: ref }); return null; }
+  return nativeOpen.apply(window, arguments);
+};
+
 /* ---------- links externos abrem em nova aba ---------- */
 document.addEventListener("click", function(ev){
   var a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
   if (!a) return;
   var h = a.getAttribute("href") || "";
+  var ref = artRef(h);
+  if (ref) { ev.preventDefault(); ev.stopPropagation(); send({ type: "open", ref: ref }); return; }
   if (/^(https?:|mailto:|tel:)/i.test(h)) { a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener noreferrer"); }
 }, true);
 
