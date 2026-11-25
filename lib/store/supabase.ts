@@ -165,4 +165,17 @@ export class SupabaseStore implements Store {
       );
     }
   }
+
+  async getSetting(key: string): Promise<string | null> {
+    const row = check(await this.db.from("app_settings").select("value").eq("key", key).maybeSingle()) as Row | null;
+    return row ? String(row.value) : null;
+  }
+
+  async setSetting(key: string, value: string | null) {
+    if (value === null) {
+      check(await this.db.from("app_settings").delete().eq("key", key));
+      return;
+    }
+    check(await this.db.from("app_settings").upsert({ key, value, updated_at: new Date().toISOString() }));
+  }
 }

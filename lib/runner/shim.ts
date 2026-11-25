@@ -151,11 +151,46 @@ function sample(prompt, opts){
   });
 }
 
+/* ---------- mcp: conectores do Google pelo servidor do site ---------- */
+var watchers = [];
+function callTool(server, tool, args){
+  return rpc("mcp", [String(server), String(tool), args || {}]);
+}
+function runWatcher(w){
+  callTool(w.server, w.tool, w.args).then(function(r){
+    if (!w.off) { try { w.cb({ type: "data", result: r }); } catch (e) { console.error(e); } }
+  }, function(e){
+    if (!w.off) { try { w.cb({ type: "error", error: { code: e.code || "error", message: e.message } }); } catch (x) { console.error(x); } }
+  });
+}
+function sameArgs(a, b){ try { return JSON.stringify(a || {}) === JSON.stringify(b || {}); } catch (e) { return false; } }
+var mcpApi = {
+  callTool: function(server, tool, args){ return callTool(server, tool, args); },
+  watchTool: function(server, tool, args, cb, opts){
+    var w = { server: server, tool: tool, args: args, cb: cb, off: false, timer: null };
+    watchers.push(w);
+    runWatcher(w);
+    var every = opts && Number(opts.refetchInterval);
+    if (every && every >= 5000) w.timer = setInterval(function(){ runWatcher(w); }, every);
+    return function(){ w.off = true; if (w.timer) clearInterval(w.timer); watchers = watchers.filter(function(x){ return x !== w; }); };
+  },
+  invalidate: function(server, tool, args){
+    watchers.forEach(function(w){
+      if (w.server !== server) return;
+      if (tool && w.tool !== tool) return;
+      if (args && !sameArgs(args, w.args)) return;
+      runWatcher(w);
+    });
+    return Promise.resolve();
+  }
+};
+
 window.claude = {
   complete: complete,
   use: function(name){
     if (name === "db") return Promise.resolve(dbApi);
     if (name === "sample") return Promise.resolve(sample);
+    if (name === "mcp") return Promise.resolve(mcpApi);
     return Promise.reject(err("not_granted", "Recurso \"" + name + "\" ainda não existe nesta plataforma"));
   }
 };

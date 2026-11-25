@@ -57,7 +57,8 @@ export function authMisconfigured(): boolean {
   return authProblem() !== null;
 }
 
-function secret(): string {
+/** Segredo do site (assina a sessão e cifra o token do Google). */
+export function secret(): string {
   return process.env.SESSION_SECRET || `pw:${process.env.APP_PASSWORD || ""}`;
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import TopBar from "@/components/TopBar";
+import GoogleConnect from "@/components/GoogleConnect";
 import type { Artifact } from "@/lib/types";
 
 function fmtDate(iso: string) {
@@ -47,6 +48,7 @@ export default function LibraryPage() {
   return (
     <>
       <TopBar>
+        <GoogleConnect />
         <Link className="btn primary sm" href="/import">
           + Importar
         </Link>

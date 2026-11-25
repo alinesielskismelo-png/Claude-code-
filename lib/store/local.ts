@@ -198,4 +198,32 @@ export class LocalStore implements Store {
       await this.writeAtomic(this.kvFile(artifactId), JSON.stringify(kv));
     });
   }
+
+  private settingsFile() {
+    return path.join(this.dir, "settings.json");
+  }
+
+  async getSetting(key: string): Promise<string | null> {
+    try {
+      const all = JSON.parse(await fs.readFile(this.settingsFile(), "utf8")) as Record<string, string>;
+      return all[key] ?? null;
+    } catch (e: unknown) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw e;
+    }
+  }
+
+  setSetting(key: string, value: string | null) {
+    return this.lock(async () => {
+      let all: Record<string, string> = {};
+      try {
+        all = JSON.parse(await fs.readFile(this.settingsFile(), "utf8"));
+      } catch {
+        /* arquivo novo */
+      }
+      if (value === null) delete all[key];
+      else all[key] = value;
+      await this.writeAtomic(this.settingsFile(), JSON.stringify(all));
+    });
+  }
 }
